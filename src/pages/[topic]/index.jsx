@@ -1,12 +1,10 @@
 import Head from 'next/head';
 import { dehydrate, QueryClient, useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Topics } from '@/data/constants';
-import Link from 'next/link';
+import { useRouter } from 'next/router';
 
-export async function getTopNews() {
-	const res = await fetch(`https://newsapi.org/v2/top-headlines?country=in&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`);
+export async function getTopNews(topic) {
+	const res = await fetch(`https://newsapi.org/v2/everything?q=${topic}&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`);
 	const data = await res.json();
 	return data;
 }
@@ -22,7 +20,10 @@ export default function Home({ data }) {
 		return `${result[0]}/${result[1]}/${result[2]} ${result[3]}:${result[4]}:${result[5]}`;
 	}
 
-	const query = useQuery(['top'], getTopNews, {
+	const router = useRouter();
+	const { topic } = router.query;
+
+	const query = useQuery([`${topic}`], () => getTopNews(topic), {
 		staleTime: 1000 * 60 * 5, // 5 minutes
 	});
 
@@ -40,19 +41,16 @@ export default function Home({ data }) {
 
 			<main className="w-full min-h-screen overflow-x-hidden">
 				<Tabs.Root defaultValue="tab1" orientation="vertical" className="my-5 p-2">
-					<Tabs.List
-						aria-label="tabs example"
-						className="w-full flex gap-8 justify-center items-center overflow-x-scroll hide-scrollbar scroll-m-0 snap-x snap-proximity"
-					>
-						{Topics.map((topic, index) => (
-							<Tabs.Trigger
-								key={index}
-								value={topic}
-								className="py-1 px-4 rounded-full bg-blue-100 hover:scale-x-110 transition-all snap-center w-screen"
-							>
-								<Link href={`/${topic}`}>{topic}</Link>
-							</Tabs.Trigger>
-						))}
+					<Tabs.List aria-label="tabs example" className="w-full flex gap-4 justify-center items-center">
+						<Tabs.Trigger value="tab1" className="py-1 px-3 rounded-full bg-blue-100 hover:scale-x-110 transition-all">
+							One
+						</Tabs.Trigger>
+						<Tabs.Trigger value="tab2" className="py-1 px-3 rounded-full bg-blue-100 hover:scale-x-110 transition-all">
+							Two
+						</Tabs.Trigger>
+						<Tabs.Trigger value="tab3" className="py-1 px-3 rounded-full bg-blue-100 hover:scale-x-110 transition-all">
+							Three
+						</Tabs.Trigger>
 					</Tabs.List>
 					<Tabs.Content value="tab1">
 						<section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center gap-y-10 gap-x-10 my-10 max-w-6xl mx-auto">
@@ -81,21 +79,13 @@ export default function Home({ data }) {
 	);
 }
 
-export async function getServerSideProps() {
-	// const res = await fetch(`https://newsapi.org/v2/top-headlines?country=in&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`);
-	// const data = await res.json();
-
-	// return {
-	// 	props: {
-	// 		data,
-	// 	},
-	// };
+export async function getServerSideProps({ query }) {
+	const { topic } = query;
 
 	const queryClient = new QueryClient();
 
-	await queryClient.prefetchQuery(['top'], () => {
-		return getTopNews();
-		// return axios(`https://newsapi.org/v2/top-headlines?country=in&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`);
+	await queryClient.prefetchQuery([`${topic}`], () => {
+		return getNewsByTopic(query.topic || 'top-headlines');
 	});
 
 	return {

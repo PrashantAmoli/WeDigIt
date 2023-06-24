@@ -1,0 +1,17 @@
+export const Topics = [
+	'All',
+	'React',
+	'Next',
+	'Tailwind',
+	'Education',
+	'Unemployment',
+	'Health',
+	'Politics',
+	'Economy',
+	'Sports',
+	'Entertainment',
+	'Technology',
+	'Science',
+	'Business',
+	'Travel',
+];
