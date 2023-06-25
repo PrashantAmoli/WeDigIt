@@ -1,4 +1,24 @@
+# NEWS API Web App with Next.js
+
+This is a web app that uses the [News API](https://newsapi.org/) to display the latest news from around the world. It is built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/).
+
+## Features
+<!-- React query is used to cache data, persist data on refresh and for client side state management -->
+- [React Query](https://react-query.tanstack.com/) is used to cache data, persist data on refresh and for client side state management. It is also used for pagination and caching all the results. Mutaions are used to make & persist changes to the data similar to a statement solution but better.
+- [Tailwind CSS](https://tailwindcss.com/) is used for styling.
+- [Next.js](https://nextjs.org/) is used for server side rendering and routing. SEO is imporved with SSR & SSG by prefetching data and sending a hydrated page to client.
+- [News API](https://newsapi.org/) is used to fetch the latest news from around the world.
+- [React Paginate](https://www.npmjs.com/package/react-paginate) is used to implement the pagination component.
+- [Radix UI](https://www.radix-ui.com/) is used for headless UI components most notably tabs but later hover card will also be used. Main USP WAI-Aria for better SEO.
+- [React Icons](https://react-icons.github.io/react-icons/) is used for icons.
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+
+
+## Approch
+The approach is to make a simple functional prototype with all the right tools and elements in place. React Query is the ultimate Client side caching and state management tool. It is used for all the data fetching and caching. It is also used for pagination and caching all the results. Mutaions are used to make & persist changes to the data similar to a statement solution but better(like function). Tailwind CSS is used for styling. Next.js is used for server side rendering and routing. SEO is imporved with SSR & SSG by prefetching data and sending a hydrated page to client. News API is used to fetch the latest news from around the world. React Paginate is used to implement the pagination component. Radix UI is used for headless UI components most notably tabs but later hover card will also be used. Main USP WAI-Aria for better SEO. React Icons is used for icons. 
+
+API is rate limited to 100 req/day and a capcha error was shown when using a new account. 
 
 ## Getting Started
 

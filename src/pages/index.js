@@ -4,42 +4,68 @@ import axios from 'axios';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Topics } from '@/data/constants';
 import Link from 'next/link';
+import { NewsGrid } from '@/components';
+import ReactPaginate from 'react-paginate';
+import { useState } from 'react';
+import Image from 'next/image';
 
-export async function getTopNews() {
-	const res = await fetch(`https://newsapi.org/v2/top-headlines?country=in&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`);
+export async function getNewsByCategory(category, page = 1) {
+	const itemsPerPage = 20;
+	// const category_url =`https://newsapi.org/v2/top-headlines?q=${category}&category=${category}&page=${page}&pageSize=${itemsPerPage}&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`
+
+	const res = await fetch(
+		`https://newsapi.org/v2/top-headlines?q=${category}&page=${page}&pageSize=${itemsPerPage}&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`
+	);
 	const data = await res.json();
 	return data;
 }
 
-export default function Home({ data }) {
-	function extractDateTime(dateString) {
-		// Parse the date string into a JavaScript Date object.
-		const date = new Date(dateString);
+export default function Home() {
+	const [page, setPage] = useState(1);
 
-		// Return the date object's date and time properties.
-		const result = [date.getDate(), date.getMonth() + 1, date.getFullYear(), date.getHours(), date.getMinutes(), date.getSeconds()];
-
-		return `${result[0]}/${result[1]}/${result[2]} ${result[3]}:${result[4]}:${result[5]}`;
-	}
-
-	const query = useQuery(['top'], getTopNews, {
+	const query = useQuery(['General', page], () => getNewsByCategory('General', page), {
 		staleTime: 1000 * 60 * 5, // 5 minutes
+		keepPreviousData: true,
+	});
+	const businessNews = useQuery(['Business', page], () => getNewsByCategory('Business', page), {
+		staleTime: 1000 * 60 * 5, // 5 minutes
+		keepPreviousData: true,
+	});
+	const technologyNews = useQuery(['Technology', page], () => getNewsByCategory('Technology', page), {
+		staleTime: 1000 * 60 * 5, // 5 minutes
+		keepPreviousData: true,
 	});
 
 	if (query.isLoading) {
-		return <span>Loading...</span>;
+		return (
+			<>
+				<Head>Loading...</Head>
+
+				<main className="w-full min-h-screen flex justify-center items-center">
+					<span>Loading...</span>
+				</main>
+			</>
+		);
 	}
 
 	if (query.isError) {
-		return <span>Error: {query.error.message}</span>;
+		return (
+			<>
+				<Head>Error</Head>
+
+				<main className="w-full min-h-screen flex justify-center items-center">
+					<span>Error: {query.error.message}</span>;
+				</main>
+			</>
+		);
 	}
 
 	return (
 		<>
-			<Head>Title</Head>
+			<Head>Top News</Head>
 
 			<main className="w-full min-h-screen overflow-x-hidden">
-				<Tabs.Root defaultValue="tab1" orientation="vertical" className="my-5 p-2">
+				<Tabs.Root defaultValue="General" orientation="vertical" className="my-5 p-2">
 					<Tabs.List
 						aria-label="tabs example"
 						className="w-full flex gap-8 justify-center items-center overflow-x-scroll hide-scrollbar scroll-m-0 snap-x snap-proximity"
@@ -50,52 +76,71 @@ export default function Home({ data }) {
 								value={topic}
 								className="py-1 px-4 rounded-full bg-blue-100 hover:scale-x-110 transition-all snap-center w-screen"
 							>
-								<Link href={`/${topic}`}>{topic}</Link>
+								{/* <Link href={`/${topic}`}>
+									</Link> */}
+								{topic}
 							</Tabs.Trigger>
 						))}
 					</Tabs.List>
-					<Tabs.Content value="tab1">
-						<section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center gap-y-10 gap-x-10 my-10 max-w-6xl mx-auto">
-							{query?.data?.articles.map((article, index) => (
-								<article
-									key={index}
-									className="bg-slate-50 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full max-w-xs h-96 p-2.5 overflow-hidden relative border border-gray-300 rounded"
-								>
-									<img src={article.urlToImage || `/favicon.ico`} alt={article.title} className="w-full h-72  object-cover pb-2" />
-
-									<h2 className="font-semibold text-sm line-clamp-2 my-1">{article.title}</h2>
-
-									<div className="absolute bottom-0.5 left-2 w-full">
-										<p className="text-xs truncate">Author: {article.author}</p>
-										<p className="text-xs truncate">Date: {extractDateTime(article.publishedAt)}</p>
-									</div>
-								</article>
-							))}
-						</section>
+					<Tabs.Content value="General">
+						{query.isLoading ? (
+							<>
+								<section className="w-full min-h-screen flex justify-center items-center">
+									<span>Loading...</span>
+								</section>
+							</>
+						) : (
+							<NewsGrid setPage={setPage} data={query?.data} />
+						)}
 					</Tabs.Content>
-					<Tabs.Content value="tab2">Tab two content</Tabs.Content>
-					<Tabs.Content value="tab3">Tab three content</Tabs.Content>
+					<Tabs.Content value="Technology">
+						{technologyNews.isLoading ? (
+							<>
+								<section className="w-full min-h-screen flex justify-center items-center">
+									<span>Loading...</span>
+								</section>
+							</>
+						) : (
+							<NewsGrid setPage={setPage} data={technologyNews?.data} />
+						)}
+					</Tabs.Content>
+					<Tabs.Content value="Business">
+						{businessNews.isLoading ? (
+							<>
+								<section className="w-full min-h-screen flex justify-center items-center">
+									<span>Loading...</span>
+								</section>
+							</>
+						) : (
+							<NewsGrid setPage={setPage} data={businessNews?.data} />
+						)}
+					</Tabs.Content>
 				</Tabs.Root>
+
+				<p className="break-all">{JSON.stringify(query?.data)}</p>
+
+				<p className="text-center text-2xl font-bold">External Error and Bugs</p>
+				<p className="text-center text-xs">Can only use key tomorrow and unable to get a new one</p>
+				<div className="w-full flex max-md:flex-col justify-center items-center">
+					<Image src="/NewsApiError.png" width={500} height={500} alt="News API Error" className="w-full max-w-xs object-contain" />
+					<Image src="/RateLimitReached.png" width={500} height={500} alt="Rate Limit Reached" className="w-full max-w-xs object-contain" />
+				</div>
 			</main>
 		</>
 	);
 }
 
 export async function getServerSideProps() {
-	// const res = await fetch(`https://newsapi.org/v2/top-headlines?country=in&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`);
-	// const data = await res.json();
-
-	// return {
-	// 	props: {
-	// 		data,
-	// 	},
-	// };
-
 	const queryClient = new QueryClient();
+	const page = 1;
 
-	await queryClient.prefetchQuery(['top'], () => {
-		return getTopNews();
-		// return axios(`https://newsapi.org/v2/top-headlines?country=in&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`);
+	// foeach topic in topics, fetch news
+	// const topics = ['business', 'entertainment', 'general', 'health', 'science', 'sports', 'technology'];
+	Topics.forEach(async topic => {
+		await queryClient.prefetchQuery([`${topic}`, page], () => getNewsByCategory(topic, page), {
+			staleTime: 1000 * 60 * 5, // 5 minutes
+			keepPreviousData: true,
+		});
 	});
 
 	return {

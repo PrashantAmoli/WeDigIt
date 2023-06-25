@@ -2,6 +2,9 @@ import Head from 'next/head';
 import { dehydrate, QueryClient, useQuery } from '@tanstack/react-query';
 import * as Tabs from '@radix-ui/react-tabs';
 import { useRouter } from 'next/router';
+import ReactPaginate from 'react-paginate';
+import { useState } from 'react';
+import { NewsGrid } from '@/components';
 
 export async function getTopNews(topic) {
 	const res = await fetch(`https://newsapi.org/v2/everything?q=${topic}&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`);
@@ -9,23 +12,31 @@ export async function getTopNews(topic) {
 	return data;
 }
 
-export default function Home({ data }) {
-	function extractDateTime(dateString) {
-		// Parse the date string into a JavaScript Date object.
-		const date = new Date(dateString);
-
-		// Return the date object's date and time properties.
-		const result = [date.getDate(), date.getMonth() + 1, date.getFullYear(), date.getHours(), date.getMinutes(), date.getSeconds()];
-
-		return `${result[0]}/${result[1]}/${result[2]} ${result[3]}:${result[4]}:${result[5]}`;
-	}
-
+export default function Home() {
 	const router = useRouter();
 	const { topic } = router.query;
 
 	const query = useQuery([`${topic}`], () => getTopNews(topic), {
 		staleTime: 1000 * 60 * 5, // 5 minutes
 	});
+
+	const [itemOffset, setItemOffset] = useState(0);
+
+	// Simulate fetching items from another resources.
+	// (This could be items from props; or items loaded in a local state
+	// from an API endpoint with useEffect and useState)
+	const itemsPerPage = 20;
+	const endOffset = itemOffset + itemsPerPage;
+	console.log(`Loading items from ${itemOffset} to ${endOffset}`);
+	const currentItems = query?.data?.articles?.slice(itemOffset, endOffset);
+	const pageCount = Math.ceil(query?.data?.articles?.length / itemsPerPage);
+
+	// Invoke when user click to request another page.
+	const handlePageClick = event => {
+		const newOffset = (event.selected * itemsPerPage) % query?.data.totalResults;
+		console.log(`User requested page number ${event.selected}, which is offset ${newOffset}`);
+		setItemOffset(newOffset);
+	};
 
 	if (query.isLoading) {
 		return <span>Loading...</span>;
@@ -38,8 +49,9 @@ export default function Home({ data }) {
 	return (
 		<>
 			<Head>Title</Head>
-
 			<main className="w-full min-h-screen overflow-x-hidden">
+				{/* <p className="break-all">{JSON.stringify(query.data)}</p> */}
+
 				<Tabs.Root defaultValue="tab1" orientation="vertical" className="my-5 p-2">
 					<Tabs.List aria-label="tabs example" className="w-full flex gap-4 justify-center items-center">
 						<Tabs.Trigger value="tab1" className="py-1 px-3 rounded-full bg-blue-100 hover:scale-x-110 transition-all">
@@ -53,27 +65,22 @@ export default function Home({ data }) {
 						</Tabs.Trigger>
 					</Tabs.List>
 					<Tabs.Content value="tab1">
-						<section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center gap-y-10 gap-x-10 my-10 max-w-6xl mx-auto">
-							{query?.data?.articles.map((article, index) => (
-								<article
-									key={index}
-									className="bg-slate-50 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full max-w-xs h-96 p-2.5 overflow-hidden relative border border-gray-300 rounded"
-								>
-									<img src={article.urlToImage || `/favicon.ico`} alt={article.title} className="w-full h-72  object-cover pb-2" />
-
-									<h2 className="font-semibold text-sm line-clamp-2 my-1">{article.title}</h2>
-
-									<div className="absolute bottom-0.5 left-2 w-full">
-										<p className="text-xs truncate">Author: {article.author}</p>
-										<p className="text-xs truncate">Date: {extractDateTime(article.publishedAt)}</p>
-									</div>
-								</article>
-							))}
-						</section>
+						<NewsGrid articles={currentItems} />
 					</Tabs.Content>
 					<Tabs.Content value="tab2">Tab two content</Tabs.Content>
 					<Tabs.Content value="tab3">Tab three content</Tabs.Content>
 				</Tabs.Root>
+
+				<ReactPaginate
+					breakLabel="..."
+					onPageChange={handlePageClick}
+					pageRangeDisplayed={5}
+					pageCount={pageCount}
+					previousLabel="<< previous"
+					nextLabel="next >>"
+					renderOnZeroPageCount={null}
+					className="flex justify-center items-center my-5 gap-4 sm:gap-8 lg:gap-12"
+				/>
 			</main>
 		</>
 	);
